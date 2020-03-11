@@ -1,0 +1,53 @@
+version: "3"
+services:
+
+  itira-phpMyAdminAws:
+    image: phpmyadmin/phpmyadmin
+    container_name: itira-phpMyAdminAws
+    environment:
+      PMA_HOSTS: g1g-staging-rds-mariadb.cqspand7euco.us-west-2.rds.amazonaws.com,g1g-prod-rds-mariadb.cqspand7euco.us-west-2.rds.amazonaws.com
+    #      PMA_USER: g1gdbadmin
+    #      PMA_PASSWORD:
+    ports:
+      - 8010:80
+
+  # itira-phpMyAdmin for local db container configuration
+  itira-phpMyAdmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: itira-phpMyAdmin
+    environment:
+      # PMA_ARBIRARY: 1
+      PMA_HOSTS: ${PMA_HOSTS}
+      PMA_USER: ${PMA_USER}
+      PMA_PASSWORD: ${PMA_PASSWORD}
+    ports:
+      - ${PMA_LOCAL_PORT}:${PMA_DOCK_PORT}
+    depends_on:
+      - itira-mariaDB
+
+  # Maria db container configuration
+  itira-mariaDB:
+    container_name: itira-mariaDB
+    image: mariadb:10.3.8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./database/:/docker-entrypoint-initdb.d
+    command: mysqld --max_allowed_packet=512M --sql_mode="NO_ENGINE_SUBSTITUTION"
+    ports:
+      - ${MYSQL_LOCAL_PORT}:${MYSQL_DOCK_PORT}
+
+  #service for cache
+  itira-redis:
+    container_name: itira-redis
+    restart: always
+    image: redis:latest
+    ports:
+      - "6377:6379"
+    volumes:
+      - redisdata:/data
+volumes:
+  # database-data:
+  redisdata:
+  # - airflow:
+  # - dags:
