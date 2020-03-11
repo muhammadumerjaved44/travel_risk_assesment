@@ -1,6 +1,23 @@
 version: "3"
 services:
 
+  #  hub service for the selenium configurations
+  hub:
+    image: selenium/hub:3.141.59-zirconium
+    ports:
+      - "4444:4444"
+  # Spawn chrome browser for selenium configurations
+  chrome:
+    image: selenium/node-chrome:3.141.59-zirconium
+    volumes:
+      - /dev/shm:/dev/shm
+    environment:
+      HUB_HOST: hub
+      HUB_PORT: 4444
+    deploy:
+        replicas: 1
+    entrypoint: bash -c 'SE_OPTS="-host $$HOSTNAME" /opt/bin/entry_point.sh'
+
   # python and airflow container configurations #2
   itira-python:
     container_name: itira-python
