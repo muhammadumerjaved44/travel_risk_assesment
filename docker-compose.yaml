@@ -2,17 +2,19 @@ version: "3"
 services:
 
   #  hub service for the selenium configurations
-  hub:
+  itira-hub:
+    container_name: itira-hub
     image: selenium/hub:3.141.59-zirconium
     ports:
       - "4444:4444"
   # Spawn chrome browser for selenium configurations
-  chrome:
+  itira-chrome:
+    container_name: itira-chrome
     image: selenium/node-chrome:3.141.59-zirconium
     volumes:
       - /dev/shm:/dev/shm
     environment:
-      HUB_HOST: hub
+      HUB_HOST: itira-hub
       HUB_PORT: 4444
     deploy:
         replicas: 1
@@ -30,16 +32,17 @@ services:
     ports:
       - "7050:8080"
     depends_on:
-      - itira-postgres
-      - itira-initdb
       - itira-mariaDB
       - itira-phpMyAdmin
-      - hub
-      - chrome
+      - itira-postgres
+      - itira-initdb
+      - itira-hub
+      - itira-chrome
     environment:
       - AIRFLOW_HOME=/ITIRA/airflow
-      - HUB_HOST=hub
+      - HUB_HOST=itira-hub
       - HUB_PORT=4444
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=${AIRFLOW__CORE__SQL_ALCHEMY_CONN}
     volumes:
       - ./airflow/:/ITIRA/airflow
       - .files/airflow.cfg:/ITIRA/airflow/airflow.cfg
@@ -58,11 +61,14 @@ services:
     build: .
     entrypoint: airflow initdb
     depends_on:
-      - itira-postgres
       - itira-mariaDB
       - itira-phpMyAdmin
+      - itira-postgres
+      - itira-hub
+      - itira-chrome
     environment:
       - AIRFLOW_HOME=/ITIRA/airflow
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=${AIRFLOW__CORE__SQL_ALCHEMY_CONN}
     volumes:
       - ./airflow/:/ITIRA/airflow
       - .files/airflow.cfg:/ITIRA/airflow/airflow.cfg
