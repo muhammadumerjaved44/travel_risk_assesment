@@ -1,6 +1,5 @@
 import os
 from environs import Env
-from helper import do_help as hp
 import sqlalchemy
 
 
@@ -50,14 +49,24 @@ class DevelopmentConfig(Config):
     mariaUserName = env('MYSQL_ROOT_USER')
     mariaPassword = env('MYSQL_ROOT_PASSWORD')
 
-    SQLALCHEMY_DATABASE_URI = sqlalchemy.engine.url.URL(
+    SQLALCHEMY_DATABASE_URI = str(sqlalchemy.engine.url.URL(
         drivername="mysql+pymysql",
         username=mariaUserName,
         password=mariaPassword,
         host=mariaHost,
         port=mariaPort,
         database='geodb',
-    )
+    ))
+    SQLALCHEMY_BINDS = {
+            'itira_db':str(sqlalchemy.engine.url.URL(
+                drivername="mysql+pymysql",
+                username=mariaUserName,
+                password=mariaPassword,
+                host=mariaHost,
+                port=mariaPort,
+                database='g1g-itira',
+            ))
+    }
     SELENIUM_URI = 'http://localhost:4444/wd/hub'
     DEBUG                   = True
     ENV        = env('ENV')
