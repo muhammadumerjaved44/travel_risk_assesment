@@ -7,7 +7,7 @@ from sqlalchemy import pool
 
 from alembic import context
 from helper import do_help as hp
-basic_config = hp.basic_config
+basic_config = hp.from_env()
 
 USE_TWOPHASE = False
 

@@ -13,17 +13,17 @@ class Config(object):
     SQLALCHEMY_ECHO                = True
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     SECRET_KEY                     = 'p9Bv<3Eid9%$i01hdjkfhlsajkfl!@#$%^&*()!@#$%^*&^%$#@fdfk+_)(*&^%$#@'
+    env = Env()
+    env.read_env()
 
 class DockerConfig(Config):
     """
     Docker configurations
     """
-    env = Env()
-    env.read_env()
-    mariaHost = env('MYSQL_DOCK_HOST')
-    mariaPort = env('MYSQL_DOCK_PORT')
-    mariaUserName = env('MYSQL_ROOT_USER')
-    mariaPassword = env('MYSQL_ROOT_PASSWORD')
+    mariaHost = Config.env('MYSQL_DOCK_HOST')
+    mariaPort = Config.env('MYSQL_DOCK_PORT')
+    mariaUserName = Config.env('MYSQL_ROOT_USER')
+    mariaPassword = Config.env('MYSQL_ROOT_PASSWORD')
 
     SQLALCHEMY_DATABASE_URI = sqlalchemy.engine.url.URL(
         drivername="mysql+pymysql",
@@ -34,7 +34,7 @@ class DockerConfig(Config):
         database='geodb',
     )
     SELENIUM_URI = 'http://hub:4444/wd/hub'
-    ENV        = env('ENV')
+    ENV        = Config.env('ENV')
     CACHE_TYPE = 'simple'
 
 
@@ -42,12 +42,10 @@ class DevelopmentConfig(Config):
     """
     Development configurations
     """
-    env = Env()
-    env.read_env()
-    mariaHost = env('MYSQL_LOCAL_HOST')
-    mariaPort = env('MYSQL_LOCAL_PORT')
-    mariaUserName = env('MYSQL_ROOT_USER')
-    mariaPassword = env('MYSQL_ROOT_PASSWORD')
+    mariaHost = Config.env('MYSQL_LOCAL_HOST')
+    mariaPort = Config.env('MYSQL_LOCAL_PORT')
+    mariaUserName = Config.env('MYSQL_ROOT_USER')
+    mariaPassword = Config.env('MYSQL_ROOT_PASSWORD')
 
     SQLALCHEMY_DATABASE_URI = str(sqlalchemy.engine.url.URL(
         drivername="mysql+pymysql",
@@ -69,7 +67,7 @@ class DevelopmentConfig(Config):
     }
     SELENIUM_URI = 'http://localhost:4444/wd/hub'
     DEBUG                   = True
-    ENV        = env('ENV')
+    ENV        = Config.env('ENV')
     CACHE_TYPE = 'simple'
 
 
