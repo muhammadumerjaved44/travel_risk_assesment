@@ -46,3 +46,41 @@ except:
 
 data_list =  hp.prepare_urls_travel_advisory_canada()
 df = pd.DataFrame(data_list, columns=['new_country'])
+
+
+error_country = {}
+processed_countries_dic = {}
+for country in df.new_country:
+    logging.info(country)
+#    url = f'https://travel.gc.ca{href}'
+    url = f'https://travel.gc.ca/destinations/{country}'
+#    print(url)
+    browser.get(url)
+    c_url = browser.current_url
+#    country = href.split('/')[2]
+    print(c_url)
+    cnt = url.split('/')[-1]
+    if  c_url.partition('404')[1] == '404':
+#        error_country.update({country: url})
+        error_country.update({country: cnt})
+    else:
+        element_present1 = EC.presence_of_element_located((By.CSS_SELECTOR, '.tgl-panel'))
+        element_present2 = EC.presence_of_element_located((By.CSS_SELECTOR, '.tgl-panel h2'))
+        WebDriverWait(browser, 3).until(element_present1)
+        WebDriverWait(browser, 3).until(element_present2)
+        soup = BeautifulSoup(browser.page_source, 'lxml')
+        main = soup.select('.tgl-panel')
+        headers = soup.select('.generated li a')
+        
+        temp = {}
+        for h,m in zip(headers, main):
+            head_text = h.attrs['aria-controls']
+            main_text = m.text.strip()
+            
+            temp.update({head_text: main_text})
+        processed_countries_dic.update({country: temp})
+
+        logging.info('no issue in ', url)
+    time.sleep(0.5)
+browser.close()
+browser.quit()
