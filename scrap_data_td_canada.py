@@ -84,3 +84,29 @@ for country in df.new_country:
     time.sleep(0.5)
 browser.close()
 browser.quit()
+
+hp.save_as_pickel('processed_countries', processed_countries_dic)
+processed_countries_dic = hp.load_as_pickel('processed_countries')
+#hp.save_as_pickel('swap_countries_dic', swap_countries_dic
+
+
+data_chunck  = {}
+for i in processed_countries_dic.keys():
+    temp  = []
+    col_list = []
+    for j in processed_countries_dic[i].keys():
+        temp.append(processed_countries_dic[i][j])
+        data_chunck.update({i: temp})
+        colname = '_'.join(j.lower().split())
+        col_list.append(colname)
+processed_countries_pd = pd.DataFrame.from_dict(data_chunck, orient='index', columns=col_list)
+processed_countries_pd = processed_countries_pd.reset_index().rename(columns={'index': 'new_country'})
+
+processed_countries_pd['country'] = df['new_country'].str.replace('-', ' ')
+processed_countries_pd = hp.standerdise_country_name(processed_countries_pd, 'country')
+
+
+dump_pd = new_countries.merge(processed_countries_pd, on = 'name_short', how = 'left')
+dump_pd = dump_pd.dropna()
+dump_pd = dump_pd[['country_id', 'risk','security', 'entryexit', 'health', 'laws', 'disasters', 'assistance']]
+dump_pd = dump_pd.to_dict(orient='records')
