@@ -110,3 +110,13 @@ dump_pd = new_countries.merge(processed_countries_pd, on = 'name_short', how = '
 dump_pd = dump_pd.dropna()
 dump_pd = dump_pd[['country_id', 'risk','security', 'entryexit', 'health', 'laws', 'disasters', 'assistance']]
 dump_pd = dump_pd.to_dict(orient='records')
+
+
+with itira_engine_conn.begin():
+    metadata = MetaData()
+    metadata.reflect(bind=itira_engine_conn)
+    # Get Table
+    td_canada = metadata.tables['td_canada']
+    print(td_canada)
+    itira_engine_conn.execute(td_canada.insert(),dump_pd)
+    print('Records enterd successfully in to the, ',td_canada)
