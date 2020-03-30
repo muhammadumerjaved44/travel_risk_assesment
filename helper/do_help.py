@@ -11,6 +11,7 @@ import os
 import sqlalchemy as sa
 import pickle
 import config as cnf
+import country_converter as coco
 
 
 
@@ -48,14 +49,30 @@ def check_connnection(f):
                 )
          try:
             db.connect()
-            print('Database connected succuessfully')
+            print(db,' connected succuessfully')
          except:
-            print('Database connection is not estibleshed')
+            print(db,' connection is not estibleshed')
          response = f(*args, **kwargs)
 #         print('after function')
          return response, db
 #     print('decorating', f)
      return wrapped
+
+def get_geodb_engine():
+    basic_config = from_env()
+    url=basic_config.SQLALCHEMY_DATABASE_URI
+    @check_connnection
+    def get_engine(url):
+        pass
+    return get_engine(url)[1]
+
+def get_itiradb_engine():
+    basic_config = from_env()
+    url=basic_config.SQLALCHEMY_BINDS['itira_db']
+    @check_connnection
+    def get_engine(url):
+        pass
+    return get_engine(url)[1]
 
 def load_browser():
     chrome_options = webdriver.ChromeOptions()
@@ -82,7 +99,7 @@ def prepare_urls_travel_advisory_canada():
     soup = BeautifulSoup(html, 'lxml')
     hrefs = soup.select('td a')
     list_hrefs = [href.get_attribute_list('href')[0] for href in hrefs ]
-    return list_hrefs
+    return [l.split('/')[2] for l in list_hrefs]
 
 def get_jaccard_sim(str1, str2):
     a = set(str1.split())
@@ -90,3 +107,12 @@ def get_jaccard_sim(str1, str2):
     c = a.intersection(b)
     val = float(len(c)) / (len(a) + len(b) - len(c))
     return float("{0:.2f}".format(val))
+
+def standerdise_country_name(df, column_name):
+    for name in df[column_name].tolist():
+        standard_names = coco.convert(names=name, to='name_short', enforce_list=False)
+        if type(standard_names) == list:
+            df.loc[df[column_name] == name, 'name_short'] = standard_names[0]
+        else:
+            df.loc[df[column_name] == name, 'name_short'] = standard_names
+    return df
