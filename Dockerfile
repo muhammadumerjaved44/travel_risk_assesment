@@ -27,6 +27,7 @@ ENV AIRFLOW_HOME=/ITIRA/airflow
 RUN pip install apache-airflow
 COPY requirements.txt .
 RUN pip install -r requirements.txt
+RUN pip freeze > requirements.txt
 RUN conda install -c bioconda mysqlclient
 RUN pip install psycopg2-binary
 RUN conda install -c conda-forge pymysql
