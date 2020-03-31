@@ -119,4 +119,4 @@ with itira_engine_conn.begin():
     td_canada = metadata.tables['td_canada']
     print(td_canada)
     itira_engine_conn.execute(td_canada.insert(),dump_pd)
-    print('Records enterd successfully in to the, ',td_canada)
+    print('Records entered successfully into the ',td_canada)
