@@ -38,11 +38,16 @@ def upgrade_itira_db():
         sa.Column('security', sa.Text, nullable=False),
         sa.Column('entryexit', sa.Text, nullable=False),
         sa.Column('health', sa.Text, nullable=False),
+        sa.Column('laws', sa.Text, nullable=False),
         sa.Column('disasters', sa.Text, nullable=False),
         sa.Column('assistance', sa.Text, nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text("UTC_TIMESTAMP()")),
-        sa.Column('modified_at', sa.DateTime(), nullable=False, server_default=sa.text("UTC_TIMESTAMP()")),
+        sa.Column('alert_dates', sa.String(100), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP()")),
+        sa.Column('modified_at', sa.DateTime(), nullable=False, server_default = sa.text("CURRENT_TIMESTAMP()")),
     )
+    op.execute('''
+        ALTER TABLE `td_canada` CHANGE `modified_at` `modified_at` DATETIME on update CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;           
+    ''')
     pass
 
 

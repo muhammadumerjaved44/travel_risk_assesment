@@ -6,12 +6,16 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import urllib
 from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from environs import Env
 import os
 import sqlalchemy as sa
 import pickle
 import config as cnf
 import country_converter as coco
+from sqlalchemy import MetaData
+import logging
+
 
 
 
@@ -35,7 +39,7 @@ def check_connnection(f):
          db = sa.create_engine(
                 args[0],
                 # Pool size is the maximum number of permanent connections to keep.
-                pool_size=5,
+                pool_size=600,
                 # Temporarily exceeds the set pool_size if no connections are available.
                 max_overflow=2,
                 # 'pool_timeout' is the maximum number of seconds to wait when retrieving a
@@ -81,6 +85,19 @@ def load_browser():
     browser = webdriver.Chrome(executable_path=parent_path+'/chrome_driver/chromedriver', chrome_options=chrome_options)
     return browser
 
+def get_any_browser(selenium_url):
+    try:
+        browser = load_browser()
+        logging.info('run from the local browser')
+    except:
+        browser = webdriver.Remote(
+                  command_executor=selenium_url,
+                  desired_capabilities=DesiredCapabilities.CHROME)
+        logging.info('run from the docker browser')
+    return browser
+    
+
+
 def save_as_pickel(file_name, data):
     with open(file_name+'.pickle', 'wb') as f:
         # Pickle the 'data' dictionary using the highest protocol available.
@@ -98,8 +115,27 @@ def prepare_urls_travel_advisory_canada():
     html = urllib.request.urlopen(url).read()
     soup = BeautifulSoup(html, 'lxml')
     hrefs = soup.select('td a')
-    list_hrefs = [href.get_attribute_list('href')[0] for href in hrefs ]
-    return [l.split('/')[2] for l in list_hrefs]
+    dates  = soup.select('td[style="width: 200px;"]')
+    list_hrefs = [(h.get_attribute_list('href')[0].split('/')[2], d.text) for h, d in zip(hrefs, dates) ]
+    df = pd.DataFrame.from_records(list_hrefs, columns=['new_country', 'alert_dates'])
+    return df
+
+def prepare_urls_travel_advisory_usa():
+    url = 'https://travel.state.gov/content/travel/en/traveladvisories/traveladvisories.html/'
+    html = urllib.request.urlopen(url).read()
+    soup = BeautifulSoup(html, 'lxml')
+    data_list =[]
+    for i, v in enumerate(soup.select('tr')):
+        if i == 0:
+            pass
+        else:
+            data = []
+            for u in v.select('td'):
+                data.append(u.text.strip())
+            data.extend([v.find('a').attrs['href']])
+                
+            data_list.append(data)
+    return data_list
 
 def get_jaccard_sim(str1, str2):
     a = set(str1.split())
@@ -116,3 +152,8 @@ def standerdise_country_name(df, column_name):
         else:
             df.loc[df[column_name] == name, 'name_short'] = standard_names
     return df
+
+def reflect_tables(conn):
+     metadata = MetaData()
+     metadata.reflect(bind=conn)
+     return metadata
