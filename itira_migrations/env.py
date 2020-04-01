@@ -1,3 +1,6 @@
+import os, sys
+dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(dir_path)
 import logging
 from logging.config import fileConfig
 import re
@@ -7,6 +10,7 @@ from sqlalchemy import pool
 
 from alembic import context
 from helper import do_help as hp
+
 basic_config = hp.from_env()
 
 USE_TWOPHASE = False

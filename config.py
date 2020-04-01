@@ -25,15 +25,25 @@ class DockerConfig(Config):
     mariaUserName = Config.env('MYSQL_ROOT_USER')
     mariaPassword = Config.env('MYSQL_ROOT_PASSWORD')
 
-    SQLALCHEMY_DATABASE_URI = sqlalchemy.engine.url.URL(
+    SQLALCHEMY_DATABASE_URI = str(sqlalchemy.engine.url.URL(
         drivername="mysql+pymysql",
         username=mariaUserName,
         password=mariaPassword,
         host=mariaHost,
         port=mariaPort,
         database='geodb',
-    )
-    SELENIUM_URI = 'http://hub:4444/wd/hub'
+    ))
+    SQLALCHEMY_BINDS = {
+            'itira_db':str(sqlalchemy.engine.url.URL(
+                drivername="mysql+pymysql",
+                username=mariaUserName,
+                password=mariaPassword,
+                host=mariaHost,
+                port=mariaPort,
+                database='g1g-itira',
+            ))
+    }
+    SELENIUM_URI = 'http://itira-hub:4444/wd/hub'
     ENV        = Config.env('ENV')
     CACHE_TYPE = 'simple'
 

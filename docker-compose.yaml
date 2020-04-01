@@ -36,12 +36,14 @@ services:
       - itira-hub
       - itira-chrome
     environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
       - AIRFLOW_HOME=/ITIRA/airflow
       - HUB_HOST=itira-hub
       - HUB_PORT=4444
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=${AIRFLOW__CORE__SQL_ALCHEMY_CONN}
     volumes:
-      - ./airflow/:/ITIRA/airflow
       - .files/airflow.cfg:/ITIRA/airflow/airflow.cfg
       - ./dags:/ITIRA/dags
       - .:/ITIRA
@@ -64,45 +66,49 @@ services:
       - itira-hub
       - itira-chrome
     environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
       - AIRFLOW_HOME=/ITIRA/airflow
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=${AIRFLOW__CORE__SQL_ALCHEMY_CONN}
     volumes:
-      - ./airflow/:/ITIRA/airflow
       - .files/airflow.cfg:/ITIRA/airflow/airflow.cfg
+      - ./dags:/ITIRA/dags
+      - .:/ITIRA
+      - ./chrome_driver/:/ITIRA/chrome_driver 
 
   #  airflow scheduler service configuration #3
-  # itira-scheduler:
-  #   build: .
-  #   container_name: itira-scheduler
-  #   depends_on:
-  #     - itira-python
-  #     - itira-hub
-  #     - itira-chrome
-  #   volumes:
-  #     - ./airflow/:/ITIRA/airflow
-  #     - .files/airflow.cfg:/ITIRA/airflow/airflow.cfg
-  #     - ./dags:/ITIRA/dags
-  #     - ./dags:/ITIRA/airflow/dags
-  #     - .:/ITIRA
-  #     - ./postgres_data/:/var/lib/postgresql/data:rw
-  #   environment:
-  #     - AIRFLOW_HOME=/ITIRA/airflow
-  #     - AIRFLOW__CORE__SQL_ALCHEMY_CONN=${AIRFLOW__CORE__SQL_ALCHEMY_CONN}
-  #   entrypoint: airflow scheduler
-  #   stdin_open: true
-  #   privileged: true
-  #   tty: true
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "[ -f /ITIRA/airflow/airflow-scheduler.pid ]"]
-  #     interval: 30s
-  #     timeout: 30s
-  #     retries: 3
+  itira-scheduler:
+    build: .
+    container_name: itira-scheduler
+    depends_on:
+      - itira-python
+      - itira-hub
+      - itira-chrome
+    volumes:
+      - .files/airflow.cfg:/ITIRA/airflow/airflow.cfg
+      - ./dags:/ITIRA/dags
+      - .:/ITIRA
+      - ./chrome_driver/:/ITIRA/chrome_driver
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - AIRFLOW_HOME=/ITIRA/airflow
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=${AIRFLOW__CORE__SQL_ALCHEMY_CONN}
+    entrypoint: airflow scheduler
+    stdin_open: true
+    privileged: true
+    tty: true
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f /ITIRA/airflow/airflow-scheduler.pid ]"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
 
   itira-postgres:
     container_name: itira-postgres
     image: postgres:10.1-alpine
-    volumes:
-      - ./postgres_data/:/var/lib/postgresql/data:rw
     ports:
       - 5437:5432
     restart: always
@@ -159,5 +165,5 @@ services:
 volumes:
   # database-data:
   redisdata:
-  # - airflow:
-  # - dags:
+#   # - airflow:
+#   # - dags:
