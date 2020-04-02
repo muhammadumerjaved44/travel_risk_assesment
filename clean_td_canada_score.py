@@ -74,3 +74,24 @@ def feature_processing(df):
         results[col] = df[col].apply(lambda x: nonpunc(x))
     return results
 
+def calculate_sentiments(df):
+    results = df.copy()
+    
+    def sent(x):
+        return sia.polarity_scores(x)['neg']+1
+    
+    for col in df.columns:
+        results[col] = df[col].apply(lambda x: sent(x))
+    return results
+
+def fit_normalization(df):
+    results = df.copy()
+    new_max = 0
+    new_min = 5
+    for feature_name in df.columns:
+        old_min = df[feature_name].min()
+        old_max = df[feature_name].max()
+#        result[feature_name] = (df[feature_name] - min_value) / (max_value - min_value)
+        results[feature_name] = df[feature_name].apply(lambda x: ( (x - old_min) / (old_max - old_min) ) * (new_max - new_min) + new_min)
+    return results
+
