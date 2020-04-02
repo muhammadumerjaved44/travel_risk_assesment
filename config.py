@@ -1,6 +1,7 @@
 import os
-from environs import Env
+
 import sqlalchemy
+from environs import Env
 
 
 class Config(object):
