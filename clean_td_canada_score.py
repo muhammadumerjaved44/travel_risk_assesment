@@ -95,3 +95,17 @@ def fit_normalization(df):
         results[feature_name] = df[feature_name].apply(lambda x: ( (x - old_min) / (old_max - old_min) ) * (new_max - new_min) + new_min)
     return results
 
+noise_removed = feature_processing(raw_text)
+sentiments = calculate_sentiments(noise_removed)
+normalize_scores = fit_normalization(sentiments)
+normalize_scores = normalize_scores.reset_index()
+
+dump_pd = normalize_scores.to_dict(orient='records')
+
+with itira_engine_conn.begin():
+        metadata = hp.reflect_tables(itira_engine_conn)
+        td_canada_score = metadata.tables['td_canada_score']
+        # Get Table
+        print(td_canada_score)
+        itira_engine_conn.execute(td_canada_score.insert(),dump_pd)
+        print('Records entered successfully into the ',td_canada_score)
