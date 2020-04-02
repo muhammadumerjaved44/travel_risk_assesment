@@ -22,3 +22,4 @@ environs==7.2.0
 ipython==7.13.0
 lxml==4.5.0
 country_converter==0.6.7
+Keras==2.3.1
