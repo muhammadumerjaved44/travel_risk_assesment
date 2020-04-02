@@ -1,19 +1,18 @@
 # -*- coding: 'utf-8 -*-
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
+import logging
+import os
 import time
 import pandas as pd
-from helper import do_help as hp
-from sqlalchemy.sql import text
-import os
-from bs4 import BeautifulSoup
-import logging
-
-from sqlalchemy import MetaData, select,inspect
-from sqlalchemy import select, or_, and_
-from sqlalchemy.sql.expression import bindparam
 from datetime import datetime
+from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from sqlalchemy import MetaData, and_, inspect, or_, select
+from sqlalchemy.sql import text
+from sqlalchemy.sql.expression import bindparam
+from helper import do_help as hp
+
 #dir_path = os.path.abspath(os.path.dirname(__file__))
 
 # load basic configurations
@@ -33,7 +32,7 @@ with itira_engine_conn.begin():
     countries_sql.cte(name='countries_sql')
     result = itira_engine_conn.execute(countries_sql)
     countries = pd.DataFrame(result.fetchall(), columns = result.keys())
-    
+
 new_countries = countries[['country_id', 'country', 'abbr']]
 new_countries = hp.standerdise_country_name(new_countries, 'country')
 
@@ -74,12 +73,12 @@ for country in data_list.new_country:
         soup = BeautifulSoup(browser.page_source, 'lxml')
         main = soup.select('.tgl-panel')
         headers = soup.select('.generated li a')
-        
+
         temp = {}
         for h,m in zip(headers, main):
             head_text = h.attrs['aria-controls']
             main_text = m.text.strip()
-            
+
             temp.update({head_text: main_text})
         processed_countries_dic.update({country: temp})
 
@@ -119,7 +118,7 @@ if result == 0:
     print('Ready to insert records')
     with itira_engine_conn.begin():
         metadata = hp.reflect_tables(itira_engine_conn)
-        td_canada = metadata.tables['td_canada']    
+        td_canada = metadata.tables['td_canada']
         # Get Table
         print(td_canada)
         itira_engine_conn.execute(td_canada.insert(),dump_pd)
@@ -137,17 +136,14 @@ else:
         values({
             'country_id': bindparam('country_id'),
             'risk': bindparam('risk'),
-            'security': bindparam('security'), 
-            'entryexit': bindparam('entryexit'), 
+            'security': bindparam('security'),
+            'entryexit': bindparam('entryexit'),
             'health': bindparam('health'),
             'laws': bindparam('laws'),
-            'disasters': bindparam('disasters'), 
-            'assistance': bindparam('assistance'), 
+            'disasters': bindparam('disasters'),
+            'assistance': bindparam('assistance'),
             'alert_dates': bindparam('alert_dates')
         })
-        
+
         itira_engine_conn.execute(q, dump_pd)
         print('Records updated successfully into the ',td_canada)
-        
-    
-    
