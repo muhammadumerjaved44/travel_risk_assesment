@@ -55,5 +55,74 @@ def load_countries_details():
     data_list = data_list.reset_index().rename(columns={"index": "country"})
     return data_list
  
+def scrap_country_info(data_list):
+    browser = hp.get_any_browser(selenium_url)
+    df = data_list.copy()
+    def parse_html(string):
+        string = string.replace("\n", "").replace("\xa0", " ").replace(r'href="/content', 'href="https://travel.state.gov/content')
+        return string
+    error_country = {}
+    information = []
+    for href in df.urls:
+        url = f'https://travel.state.gov{href}.html?wcmmode=disabled'
+        browser.get(url)
+    #    print(url)
+        c_url = browser.current_url
+    #    country = href.split('/')[2]
+        print(c_url)
+    #    break
+        cnt = url.split('/')[-1]
+        if  c_url.partition('404')[1] == '404':
+            error_country.update({url: cnt})
+        else:
+            c_url = browser.current_url
+            WebDriverWait(browser, 5)
+            soup = BeautifulSoup(browser.page_source, 'lxml')
+    #        cleanSoup = BeautifulSoup(str(soup).replace("/content", "https://travel.state.gov/content"))
+            cleanSoup = BeautifulSoup(str(soup).replace("data-url", "href"), 'lxml')
+            cleanSoup = BeautifulSoup(str(cleanSoup).replace("#/", c_url), 'lxml')
+            try:
+                let_dict = {}
+#                travel_advisory = browser.find_element_by_css_selector('.advisories div.tsg-rwd-eab-type-frame').text.strip()
+                update_date = browser.find_element_by_css_selector('.advisories div.tsg-rwd-eab-date-frame').text.strip()
+                country_name = browser.find_element_by_css_selector('.advisories h3.tsg-rwd-eab-title-frame').text.split("-")[0].strip()
+                alert_status = browser.find_element_by_css_selector('.advisories h3.tsg-rwd-eab-title-frame').text.split("-")[1].strip()
+                summary = parse_html(''.join([str(u) for u in cleanSoup.select('.advisories div.tsg-rwd-alert-more-box-content > p')]))
+                alert_details = parse_html(''.join([str(u) for u in cleanSoup.select('div.embassy-messages div.rssarchieve > div')]))
+                embassy_consulate = parse_html(''.join([str(u) for u in  cleanSoup.select('.tsg-rwd-accordion-copy')[0]]))
+                destination_description = parse_html(''.join([str(u) for u in  cleanSoup.select('.tsg-rwd-accordion-copy')[1]]))
+                entry_exit =  parse_html(''.join([str(u) for u in  cleanSoup.select('.tsg-rwd-accordion-copy')[2]]))
+                safty_security = parse_html(''.join([str(u) for u in  cleanSoup.select('.tsg-rwd-accordion-copy')[3]]))
+                local_law = parse_html(''.join([str(u) for u in  cleanSoup.select('.tsg-rwd-accordion-copy')[4]]))
+                health =  parse_html(''.join([str(u) for u in  cleanSoup.select('.tsg-rwd-accordion-copy')[5]]))
+                travel_transport = parse_html(''.join([str(u) for u in  cleanSoup.select('.tsg-rwd-accordion-copy')[6]]))
+#                let_dict.update({"travel_advisory":travel_advisory})
+                let_dict.update({"update_date":update_date})
+                let_dict.update({"country_name":country_name})
+                let_dict.update({"alert_status":alert_status})
+                let_dict.update({"summary":summary})
+                let_dict.update({"alert_details":alert_details})
+                let_dict.update({"embassy_consulate":embassy_consulate})
+                let_dict.update({"destination_description":destination_description})
+                let_dict.update({"entry_exit":entry_exit})
+                let_dict.update({"safty_security":safty_security})
+                let_dict.update({"local_law":local_law})
+                let_dict.update({"health":health})
+                let_dict.update({"travel_transport":travel_transport})
+                let_dict.update({"url":c_url})
+                information.append(let_dict)
+                print('compelete')
+    #            time.sleep(0.5)
+                pass
+            except:
+                print('error')
+    browser.close()
+    browser.quit()
+    return information
+
+#umer = '<hr>'.join(information)   
+#with open('umer.html', "w") as f:
+#    f.write(umer)
+
 
 
