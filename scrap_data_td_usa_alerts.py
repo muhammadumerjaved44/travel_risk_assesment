@@ -49,6 +49,17 @@ with itira_engine_conn.begin():
 new_countries = countries[['country_id', 'country', 'abbr']]
 new_countries = hp.standerdise_country_name(new_countries, 'country')
 
+def load_alert_urls():
+    data_list = hp.prepare_urls_travel_advisory_usa()
+    df = pd.DataFrame.from_records(data_list, columns=['title', 'levels', 'last_update', 'links'])
+    df['country'] = df.title.str.split('Travel Advisory', expand=True)[0].str.strip()
+    df = hp.standerdise_country_name(df, 'country')
+    return df
+
+
+data_list = load_alert_urls()    
+
+
 
         
 
