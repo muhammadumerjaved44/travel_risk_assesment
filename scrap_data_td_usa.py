@@ -124,5 +124,26 @@ def scrap_country_info(data_list):
 #with open('umer.html', "w") as f:
 #    f.write(umer)
 
+data_list  = load_countries_details()
+information = scrap_country_info(data_list)
+us_information = pd.DataFrame.from_records(information)
+us_information_clean = us_information.sort_values('alert_details').drop_duplicates(keep='last', subset='country_name')
+us_information_clean = hp.standerdise_country_name(us_information_clean, 'country_name')
+us_information_clean = us_information_clean.drop(us_information_clean.loc[us_information_clean['name_short']=='not found'].index).reset_index(drop=True) 
 
+dump_pd  = new_countries.merge(us_information_clean, how='left', on='name_short')
+dump_pd = dump_pd.dropna()
+dump_pd = dump_pd[['country_id', 'update_date', 'alert_status', 'summary',
+       'alert_details', 'embassy_consulate', 'destination_description',
+       'entry_exit', 'safty_security', 'local_law', 'health',
+       'travel_transport', 'url']]
+dump_pd = dump_pd.to_dict(orient='records')
+
+with itira_engine_conn.begin():
+        metadata = hp.reflect_tables(itira_engine_conn)
+        td_usa = metadata.tables['td_usa']
+        # Get Table
+        print(td_usa)
+        itira_engine_conn.execute(td_usa.insert(),dump_pd)
+        print('Records entered successfully into the ',td_usa)
 
