@@ -46,9 +46,7 @@ with itira_engine_conn.begin():
     result = itira_engine_conn.execute(q).fetchone()[0]
 
 browser = hp.get_any_browser(selenium_url)
-data_list =  hp.prepare_urls_travel_advisory_canada()
-
-
+data_list = hp.prepare_urls_travel_advisory_canada()
 
 error_country = {}
 processed_countries_dic = {}
@@ -66,10 +64,14 @@ for country in data_list.new_country:
 #        error_country.update({country: url})
         error_country.update({country: cnt})
     else:
-        element_present1 = EC.presence_of_element_located((By.CSS_SELECTOR, '.tgl-panel'))
-        element_present2 = EC.presence_of_element_located((By.CSS_SELECTOR, '.tgl-panel h2'))
-        WebDriverWait(browser, 3).until(element_present1)
-        WebDriverWait(browser, 3).until(element_present2)
+        try:
+            element_present1 = EC.presence_of_element_located((By.CSS_SELECTOR, '.tgl-panel'))
+            element_present2 = EC.presence_of_element_located((By.CSS_SELECTOR, '.tgl-panel h2'))
+            WebDriverWait(browser, 5).until(element_present1)
+            WebDriverWait(browser, 5).until(element_present2)
+        except:
+            print('error', url)
+            continue
         soup = BeautifulSoup(browser.page_source, 'lxml')
         main = soup.select('.tgl-panel')
         headers = soup.select('.generated li a')
@@ -87,8 +89,8 @@ for country in data_list.new_country:
 browser.close()
 browser.quit()
 
-hp.save_as_pickel('processed_countries', processed_countries_dic)
-processed_countries_dic = hp.load_as_pickel('processed_countries')
+#hp.save_as_pickel('processed_countries', processed_countries_dic)
+#processed_countries_dic = hp.load_as_pickel('processed_countries')
 #hp.save_as_pickel('swap_countries_dic', swap_countries_dic
 
 
