@@ -40,3 +40,20 @@ new_countries = hp.standerdise_country_name(new_countries, 'country')
 
 # load browser for scrapping
 
+with itira_engine_conn.begin():
+    q = text('''
+             SELECT EXISTS (SELECT 1 FROM td_canada)
+             ''')
+    result = itira_engine_conn.execute(q).fetchone()[0]
+
+
+
+def load_countries_details(): 
+    with open('us_countries.json') as f:
+      data = json.load(f)
+    data_list = pd.DataFrame.from_dict(data, orient='index', columns=['urls'])
+    data_list = data_list.reset_index().rename(columns={"index": "country"})
+    return data_list
+ 
+
+
