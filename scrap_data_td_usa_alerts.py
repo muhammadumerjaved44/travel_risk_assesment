@@ -59,7 +59,21 @@ def load_alert_urls():
 
 data_list = load_alert_urls()    
 
+travel_data  =  new_countries.merge(data_list, on = 'name_short', how = 'left')
+travel_data = travel_data.dropna()
+travel_data = travel_data[['country_id', 'title', 'levels',
+       'last_update', 'links']]
+travel_data['level_numbers'] = travel_data['levels'].str.split(expand = True)[1].str.rstrip(':').astype(int)
 
+dump_pd = travel_data.to_dict(orient='records')
+with itira_engine_conn.begin():
+    metadata = MetaData()
+    metadata.reflect(bind=itira_engine_conn)
+    # Get Table
+    td_usa_alerts = metadata.tables['td_usa_alerts']
+    print(td_usa_alerts)
+    itira_engine_conn.execute(td_usa_alerts.insert(),dump_pd)
+    print('Records entered successfully in to the, ',td_usa_alerts)
 
         
 
