@@ -13,7 +13,7 @@ from sqlalchemy.sql import text
 from sqlalchemy.sql.expression import bindparam
 from helper import do_help as hp
 
-#dir_path = os.path.abspath(os.path.dirname(__file__))
+dir_path = os.path.abspath(os.path.dirname(__file__))
 
 # load basic configurations
 basic_config = hp.from_env()
@@ -24,17 +24,19 @@ geo_engine_conn = hp.get_geodb_engine()
 itira_engine_conn = hp.get_itiradb_engine()
 
 
-with itira_engine_conn.begin():
-    # Get Table
-    metadata = hp.reflect_tables(itira_engine_conn)
-    tb_countries = metadata.tables['countries']
-    countries_sql = select([tb_countries.c.countryID.label('country_id'), tb_countries])
-    countries_sql.cte(name='countries_sql')
-    result = itira_engine_conn.execute(countries_sql)
-    countries = pd.DataFrame(result.fetchall(), columns = result.keys())
-
-new_countries = countries[['country_id', 'country', 'abbr']]
-new_countries = hp.standerdise_country_name(new_countries, 'country')
+def load_countries():
+    with itira_engine_conn.begin():
+        # Get Table
+        metadata = hp.reflect_tables(itira_engine_conn)
+        tb_countries = metadata.tables['countries']
+        countries_sql = select([tb_countries.c.countryID.label('country_id'), tb_countries])
+        countries_sql.cte(name='countries_sql')
+        result = itira_engine_conn.execute(countries_sql)
+        countries = pd.DataFrame(result.fetchall(), columns = result.keys())
+    
+    new_countries = countries[['country_id', 'country', 'abbr']]
+    new_countries = hp.standerdise_country_name(new_countries, 'country')
+    return new_countries
 
 
 # load browser for scrapping
