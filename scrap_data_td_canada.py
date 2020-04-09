@@ -39,13 +39,17 @@ def load_countries():
     return new_countries
 
 
-# load browser for scrapping
-
-with itira_engine_conn.begin():
-    q = text('''
-             SELECT EXISTS (SELECT 1 FROM td_canada)
-             ''')
-    result = itira_engine_conn.execute(q).fetchone()[0]
+def table_is_empty():
+    with itira_engine_conn.begin():
+        q = text('''
+                 SELECT EXISTS (SELECT 1 FROM td_canada)
+                 ''')
+        result = itira_engine_conn.execute(q).fetchone()[0]
+    if result == 0:
+        return True
+    else:
+        return False
+    
 
 browser = hp.get_any_browser(selenium_url)
 data_list = hp.prepare_urls_travel_advisory_canada()
