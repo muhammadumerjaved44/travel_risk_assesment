@@ -51,78 +51,91 @@ def table_is_empty():
         return False
     
 
-browser = hp.get_any_browser(selenium_url)
-data_list = hp.prepare_urls_travel_advisory_canada()
+def scrap_canada_site():
+    browser = hp.get_any_browser(selenium_url)
+    data_list = hp.prepare_urls_travel_advisory_canada()
+    
+    error_country = {}
+    processed_countries_dic = {}
+    for country in data_list.new_country:
+        logging.info(country)
+    #    url = f'https://travel.gc.ca{href}'
+        url = f'https://travel.gc.ca/destinations/{country}'
+    #    print(url)
+        browser.get(url)
+        c_url = browser.current_url
+    #    country = href.split('/')[2]
+        print(c_url)
+        cnt = url.split('/')[-1]
+        if  c_url.partition('404')[1] == '404':
+    #        error_country.update({country: url})
+            error_country.update({country: cnt})
+        else:
+            try:
+                element_present1 = EC.presence_of_element_located((By.CSS_SELECTOR, '.tgl-panel'))
+                element_present2 = EC.presence_of_element_located((By.CSS_SELECTOR, '.tgl-panel h2'))
+                WebDriverWait(browser, 5).until(element_present1)
+                WebDriverWait(browser, 5).until(element_present2)
+            except:
+                print('error', url)
+                continue
+            soup = BeautifulSoup(browser.page_source, 'lxml')
+            main = soup.select('.tgl-panel')
+            headers = soup.select('.generated li a')
+    
+            temp = {}
+            for h,m in zip(headers, main):
+                head_text = h.attrs['aria-controls']
+                main_text = m.text.strip()
+    
+                temp.update({head_text: main_text})
+            processed_countries_dic.update({country: temp})
+    
+            logging.info('no issue in ', url)
+        time.sleep(0.5)
+    browser.close()
+    browser.quit()
+    
+    data_chunck  = {}
+    for i in processed_countries_dic.keys():
+        temp  = []
+        col_list = []
+        for j in processed_countries_dic[i].keys():
+            temp.append(processed_countries_dic[i][j])
+            data_chunck.update({i: temp})
+            colname = '_'.join(j.lower().split())
+            col_list.append(colname)
+    processed_countries_pd = pd.DataFrame.from_dict(data_chunck, orient='index', columns=col_list)
+    processed_countries_pd = processed_countries_pd.reset_index().rename(columns={'index': 'new_country'})
+    
+    processed_countries_pd['country'] = data_list['new_country'].str.replace('-', ' ')
+    processed_countries_pd['alert_dates'] = data_list['alert_dates']
+    processed_countries_pd = hp.standerdise_country_name(processed_countries_pd, 'country')
+    
+    return processed_countries_pd
 
-error_country = {}
-processed_countries_dic = {}
-for country in data_list.new_country:
-    logging.info(country)
-#    url = f'https://travel.gc.ca{href}'
-    url = f'https://travel.gc.ca/destinations/{country}'
-#    print(url)
-    browser.get(url)
-    c_url = browser.current_url
-#    country = href.split('/')[2]
-    print(c_url)
-    cnt = url.split('/')[-1]
-    if  c_url.partition('404')[1] == '404':
-#        error_country.update({country: url})
-        error_country.update({country: cnt})
-    else:
-        try:
-            element_present1 = EC.presence_of_element_located((By.CSS_SELECTOR, '.tgl-panel'))
-            element_present2 = EC.presence_of_element_located((By.CSS_SELECTOR, '.tgl-panel h2'))
-            WebDriverWait(browser, 5).until(element_present1)
-            WebDriverWait(browser, 5).until(element_present2)
-        except:
-            print('error', url)
-            continue
-        soup = BeautifulSoup(browser.page_source, 'lxml')
-        main = soup.select('.tgl-panel')
-        headers = soup.select('.generated li a')
-
-        temp = {}
-        for h,m in zip(headers, main):
-            head_text = h.attrs['aria-controls']
-            main_text = m.text.strip()
-
-            temp.update({head_text: main_text})
-        processed_countries_dic.update({country: temp})
-
-        logging.info('no issue in ', url)
-    time.sleep(0.5)
-browser.close()
-browser.quit()
-
-#hp.save_as_pickel('processed_countries', processed_countries_dic)
-#processed_countries_dic = hp.load_as_pickel('processed_countries')
-#hp.save_as_pickel('swap_countries_dic', swap_countries_dic
+def prepare_data_to_insert(countries_data, scraped_data):
+    dump_pd = countries_data.merge(scraped_data, on = 'name_short', how = 'left')
+    dump_pd = dump_pd.dropna()
+    dump_pd = dump_pd[['country_id', 'risk','security', 'entryexit', 'health', 'laws', 'disasters', 'assistance', 'alert_dates']]
+    dump_pd = dump_pd.to_dict(orient='records')
+    
+    return dump_pd
 
 
-data_chunck  = {}
-for i in processed_countries_dic.keys():
-    temp  = []
-    col_list = []
-    for j in processed_countries_dic[i].keys():
-        temp.append(processed_countries_dic[i][j])
-        data_chunck.update({i: temp})
-        colname = '_'.join(j.lower().split())
-        col_list.append(colname)
-processed_countries_pd = pd.DataFrame.from_dict(data_chunck, orient='index', columns=col_list)
-processed_countries_pd = processed_countries_pd.reset_index().rename(columns={'index': 'new_country'})
+#get countires
+new_countries = load_countries()
 
-processed_countries_pd['country'] = data_list['new_country'].str.replace('-', ' ')
-processed_countries_pd['alert_dates'] = data_list['alert_dates']
-processed_countries_pd = hp.standerdise_country_name(processed_countries_pd, 'country')
+#scrape data
+processed_countries_pd = scrap_canada_site()
+
+#prepare data for insertion
+dump_pd = prepare_data_to_insert(new_countries, processed_countries_pd)
 
 
-dump_pd = new_countries.merge(processed_countries_pd, on = 'name_short', how = 'left')
-dump_pd = dump_pd.dropna()
-dump_pd = dump_pd[['country_id', 'risk','security', 'entryexit', 'health', 'laws', 'disasters', 'assistance', 'alert_dates']]
-dump_pd = dump_pd.to_dict(orient='records')
 
-if result == 0:
+
+if table_is_empty():
     print('Ready to insert records')
     with itira_engine_conn.begin():
         metadata = hp.reflect_tables(itira_engine_conn)
@@ -134,6 +147,8 @@ if result == 0:
 else:
     print('Ready to update the records')
     with itira_engine_conn.begin():
+        metadata = hp.reflect_tables(itira_engine_conn)
+        td_canada = metadata.tables['td_canada']
         q = td_canada.update().\
         where(
               and_(
