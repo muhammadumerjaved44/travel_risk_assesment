@@ -19,46 +19,56 @@ from nltk.tokenize import sent_tokenize
 from sqlalchemy import MetaData, Table, create_engine, select
 from sqlalchemy.sql import text
 from sqlalchemy.sql import column
-from textblob import TextBlob
+from sqlalchemy.sql.expression import bindparam
+from sqlalchemy import MetaData, and_, inspect, or_, select
 import numpy as np
 
 # dir path here
-#dir_path = os.path.abspath(os.path.dirname(__file__))
+dir_path = os.path.abspath(os.path.dirname(__file__))
 
 # local initilization here
 from helper import do_help as hp
 
-# class deleration here
-sia = SentimentIntensityAnalyzer()
+
+# load basic configurations
+basic_config = hp.from_env()
+
+#laod the uri
+selenium_url = basic_config.SELENIUM_URI
 geo_engine_conn = hp.get_geodb_engine()
 itira_engine_conn = hp.get_itiradb_engine()
+sia = SentimentIntensityAnalyzer()
 
 #code starts from here
 
-with itira_engine_conn.begin():
-    metadata = hp.reflect_tables(itira_engine_conn)
-    # Get Table
-    tb_countries = metadata.tables['countries']
-    td_canada = metadata.tables['td_canada']
-    q= select(
-            [
-                td_canada,
-                tb_countries.c.country
-             ]
-            ).select_from(
-                td_canada.join(
-                    tb_countries,
-                    tb_countries.c.countryID==td_canada.c.country_id,
-                    isouter=True)
-            )
-    print(q)
-    result = itira_engine_conn.execute(q)
-    raw_text  = pd.DataFrame(result.fetchall(), columns = result.keys())
+def load_canada_table():
+    with itira_engine_conn.begin():
+        metadata = hp.reflect_tables(itira_engine_conn)
+        # Get Table
+        td_canada = metadata.tables['td_canada']
+        q= select([td_canada])
+        print(q)
+        result = itira_engine_conn.execute(q)
+        raw_text  = pd.DataFrame(result.fetchall(), columns = result.keys())
 
 #select the necessary columns that need to be processed
-raw_text = raw_text[['country_id', 'risk', 'security', 'entryexit', 'health', 'laws',
-       'disasters', 'assistance']].set_index('country_id')
-
+    raw_text = raw_text[['country_id', 'risk', 'security', 'entryexit', 'health', 'laws',
+           'disasters', 'assistance']].set_index('country_id')
+    if raw_text.empty:
+        return False, raw_text
+    else:
+        return True, raw_text
+    
+def table_is_empty():
+    with itira_engine_conn.begin():
+        q = text('''
+                 SELECT EXISTS (SELECT 1 FROM td_canada_score)
+                 ''')
+        result = itira_engine_conn.execute(q).fetchone()[0]
+    if result == 0:
+        return True
+    else:
+        return False
 
 def feature_processing(df):
     results = df.copy()
