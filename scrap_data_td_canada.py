@@ -11,9 +11,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from sqlalchemy import MetaData, and_, inspect, or_, select
 from sqlalchemy.sql import text
 from sqlalchemy.sql.expression import bindparam
+
+# dir path here
+dir_path = os.path.abspath(os.path.dirname(__file__))
+
+# local initilization here
 from helper import do_help as hp
 
-dir_path = os.path.abspath(os.path.dirname(__file__))
 
 # load basic configurations
 basic_config = hp.from_env()

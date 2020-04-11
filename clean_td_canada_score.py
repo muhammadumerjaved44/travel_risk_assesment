@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import os
+import os, sys
 import re
 import string
 import time
-import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 from bs4 import BeautifulSoup
 from keras.preprocessing.text import Tokenizer, text_to_word_sequence
+import nltk
+nltk.download('vader_lexicon')
+nltk.download('stopwords')
+nltk.download('punkt')
 from nltk import tokenize
 from nltk.corpus import stopwords
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
