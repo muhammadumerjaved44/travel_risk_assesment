@@ -68,16 +68,23 @@ def load_alert_urls():
     df = hp.standerdise_country_name(df, 'country')
     return df
 
+def prepare_data_to_insert(countries_data, scraped_data):
+    travel_data  =  countries_data.merge(scraped_data, on = 'name_short', how = 'left')
+    travel_data = travel_data.dropna()
+    travel_data = travel_data[['country_id', 'title', 'levels',
+           'last_update', 'links']]
+    travel_data['level_numbers'] = travel_data['levels'].str.split(expand = True)[1].str.rstrip(':').astype(int)
+    dump_pd = travel_data.to_dict(orient='records')
+    return dump_pd
 
-data_list = load_alert_urls()    
+#get countires
+new_countries = load_countries()
 
-travel_data  =  new_countries.merge(data_list, on = 'name_short', how = 'left')
-travel_data = travel_data.dropna()
-travel_data = travel_data[['country_id', 'title', 'levels',
-       'last_update', 'links']]
-travel_data['level_numbers'] = travel_data['levels'].str.split(expand = True)[1].str.rstrip(':').astype(int)
+#load data from site
+data_list = load_alert_urls()
 
-dump_pd = travel_data.to_dict(orient='records')
+#prepare data for insertion
+dump_pd = prepare_data_to_insert(new_countries, data_list)
 with itira_engine_conn.begin():
     metadata = MetaData()
     metadata.reflect(bind=itira_engine_conn)
