@@ -36,17 +36,30 @@ selenium_url = basic_config.SELENIUM_URI
 geo_engine_conn = hp.get_geodb_engine()
 itira_engine_conn = hp.get_itiradb_engine()
 
-with itira_engine_conn.begin():
-    # Get Table
-    metadata = hp.reflect_tables(itira_engine_conn)
-    tb_countries = metadata.tables['countries']
-    countries_sql = select([tb_countries.c.countryID.label('country_id'), tb_countries])
-    countries_sql.cte(name='countries_sql')
-    result = itira_engine_conn.execute(countries_sql)
-    countries = pd.DataFrame(result.fetchall(), columns = result.keys())
+def load_countries():
+    with itira_engine_conn.begin():
+        # Get Table
+        metadata = hp.reflect_tables(itira_engine_conn)
+        tb_countries = metadata.tables['countries']
+        countries_sql = select([tb_countries.c.countryID.label('country_id'), tb_countries])
+        countries_sql.cte(name='countries_sql')
+        result = itira_engine_conn.execute(countries_sql)
+        countries = pd.DataFrame(result.fetchall(), columns = result.keys())
+    
+    new_countries = countries[['country_id', 'country', 'abbr']]
+    new_countries = hp.standerdise_country_name(new_countries, 'country')
+    return new_countries
 
-new_countries = countries[['country_id', 'country', 'abbr']]
-new_countries = hp.standerdise_country_name(new_countries, 'country')
+def table_is_empty():
+    with itira_engine_conn.begin():
+        q = text('''
+                 SELECT EXISTS (SELECT 1 FROM td_usa_alerts)
+                 ''')
+        result = itira_engine_conn.execute(q).fetchone()[0]
+    if result == 0:
+        return True
+    else:
+        return False
 
 def load_alert_urls():
     data_list = hp.prepare_urls_travel_advisory_usa()
