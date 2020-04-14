@@ -85,16 +85,41 @@ data_list = load_alert_urls()
 
 #prepare data for insertion
 dump_pd = prepare_data_to_insert(new_countries, data_list)
-with itira_engine_conn.begin():
-    metadata = MetaData()
-    metadata.reflect(bind=itira_engine_conn)
-    # Get Table
-    td_usa_alerts = metadata.tables['td_usa_alerts']
-    print(td_usa_alerts)
-    itira_engine_conn.execute(td_usa_alerts.insert(),dump_pd)
-    print('Records entered successfully in to the, ',td_usa_alerts)
 
-        
+
+if table_is_empty():
+    print('Ready to insert records')
+    with itira_engine_conn.begin():
+        metadata = MetaData()
+        metadata.reflect(bind=itira_engine_conn)
+        # Get Table
+        td_usa_alerts = metadata.tables['td_usa_alerts']
+        print(td_usa_alerts)
+        itira_engine_conn.execute(td_usa_alerts.insert(),dump_pd)
+        print('Records entered successfully in to the, ',td_usa_alerts)
+else:
+    print('Ready to update the records')
+    with itira_engine_conn.begin():
+        metadata = hp.reflect_tables(itira_engine_conn)
+        td_usa_alerts = metadata.tables['td_usa_alerts']
+        q = td_usa_alerts.update().\
+        where(
+              and_(
+                      td_usa_alerts.c.country_id == bindparam('country_id'),
+                      td_usa_alerts.c.last_update != bindparam('last_update'),
+              )
+        ).\
+        values({
+            'country_id': bindparam('country_id'),
+            'title': bindparam('title'),
+            'levels': bindparam('levels'),
+            'last_update': bindparam('last_update'),
+            'links': bindparam('links'),
+            'level_numbers': bindparam('level_numbers')
+        })
+
+        itira_engine_conn.execute(q, dump_pd)
+        print('Records updated successfully into the ',td_usa_alerts) 
 
 
         
