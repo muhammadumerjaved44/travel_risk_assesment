@@ -12,22 +12,21 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 import time
 import pandas as pd
-from helper import do_help as hp
-from sqlalchemy.sql import text
 import os
 from bs4 import BeautifulSoup
-import logging
-import feedparser
-
-from sqlalchemy import create_engine
-from sqlalchemy import MetaData
-from sqlalchemy import Table
-from sqlalchemy import select
+from sqlalchemy.sql import text
+from sqlalchemy import Table, MetaData, and_, inspect, or_, select
+from sqlalchemy.sql.expression import bindparam
 from collections import defaultdict
 import country_converter as coco
 
 
+# dir path here
 dir_path = os.path.abspath(os.path.dirname(__file__))
+
+# local initilization here
+from helper import do_help as hp
+
 
 # load basic configurations
 basic_config = hp.from_env()
