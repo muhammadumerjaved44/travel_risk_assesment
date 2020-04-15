@@ -19,41 +19,50 @@ dir_path = os.path.abspath(os.path.dirname(__file__))
 # local initilization here
 from helper import do_help as hp
 
-# class deleration here
+
+# load basic configurations
 basic_config = hp.from_env()
+
+#laod the uri
 selenium_url = basic_config.SELENIUM_URI
 geo_engine_conn = hp.get_geodb_engine()
 itira_engine_conn = hp.get_itiradb_engine()
 
-with itira_engine_conn.begin():
-    # Get Table
-    metadata = hp.reflect_tables(itira_engine_conn)
-    tb_countries = metadata.tables['countries']
-    countries_sql = select([tb_countries.c.countryID.label('country_id'), tb_countries])
-    countries_sql.cte(name='countries_sql')
-    result = itira_engine_conn.execute(countries_sql)
-    countries = pd.DataFrame(result.fetchall(), columns = result.keys())
 
-new_countries = countries[['country_id', 'country', 'abbr']]
-new_countries = hp.standerdise_country_name(new_countries, 'country')
+def load_countries():
+    with itira_engine_conn.begin():
+        # Get Table
+        metadata = hp.reflect_tables(itira_engine_conn)
+        tb_countries = metadata.tables['countries']
+        countries_sql = select([tb_countries.c.countryID.label('country_id'), tb_countries])
+        countries_sql.cte(name='countries_sql')
+        result = itira_engine_conn.execute(countries_sql)
+        countries = pd.DataFrame(result.fetchall(), columns = result.keys())
+    
+    new_countries = countries[['country_id', 'country', 'abbr']]
+    new_countries = hp.standerdise_country_name(new_countries, 'country')
+    return new_countries
 
 
-# load browser for scrapping
-
-with itira_engine_conn.begin():
-    q = text('''
-             SELECT EXISTS (SELECT 1 FROM td_canada)
-             ''')
-    result = itira_engine_conn.execute(q).fetchone()[0]
-
+def table_is_empty():
+    with itira_engine_conn.begin():
+        q = text('''
+                 SELECT EXISTS (SELECT 1 FROM td_usa)
+                 ''')
+        result = itira_engine_conn.execute(q).fetchone()[0]
+    if result == 0:
+        return True
+    else:
+        return False
 
 
 def load_countries_details(): 
-    with open('us_countries.json') as f:
+    with open(dir_path+'/us_countries.json') as f:
       data = json.load(f)
     data_list = pd.DataFrame.from_dict(data, orient='index', columns=['urls'])
     data_list = data_list.reset_index().rename(columns={"index": "country"})
     return data_list
+
  
 def scrap_country_info(data_list):
     browser = hp.get_any_browser(selenium_url)
