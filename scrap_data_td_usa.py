@@ -129,30 +129,77 @@ def scrap_country_info(data_list):
     browser.quit()
     return information
 
-#umer = '<hr>'.join(information)   
-#with open('umer.html', "w") as f:
-#    f.write(umer)
+def prepare_data_to_insert(us_information):
+    us_information_clean = us_information.sort_values('alert_details').drop_duplicates(keep='last', subset='country_name')
+    us_information_clean = hp.standerdise_country_name(us_information_clean, 'country_name')
+    us_information_clean = us_information_clean.drop(us_information_clean.loc[us_information_clean['name_short']=='not found'].index).reset_index(drop=True) 
+    
+    dump_pd  = new_countries.merge(us_information_clean, how='left', on='name_short')
+    dump_pd = dump_pd.dropna()
+    dump_pd = dump_pd[['country_id', 'update_date', 'alert_status', 'summary',
+           'alert_details', 'embassy_consulate', 'destination_description',
+           'entry_exit', 'safty_security', 'local_law', 'health',
+           'travel_transport', 'url']]
+    dump_pd = dump_pd.to_dict(orient='records')
+    return dump_pd
+
+#get countires
+new_countries = load_countries()
 
 data_list  = load_countries_details()
+
 information = scrap_country_info(data_list)
+
 us_information = pd.DataFrame.from_records(information)
-us_information_clean = us_information.sort_values('alert_details').drop_duplicates(keep='last', subset='country_name')
-us_information_clean = hp.standerdise_country_name(us_information_clean, 'country_name')
-us_information_clean = us_information_clean.drop(us_information_clean.loc[us_information_clean['name_short']=='not found'].index).reset_index(drop=True) 
 
-dump_pd  = new_countries.merge(us_information_clean, how='left', on='name_short')
-dump_pd = dump_pd.dropna()
-dump_pd = dump_pd[['country_id', 'update_date', 'alert_status', 'summary',
-       'alert_details', 'embassy_consulate', 'destination_description',
-       'entry_exit', 'safty_security', 'local_law', 'health',
-       'travel_transport', 'url']]
-dump_pd = dump_pd.to_dict(orient='records')
+dump_pd = prepare_data_to_insert(us_information)
 
-with itira_engine_conn.begin():
+
+#with itira_engine_conn.begin():
+#        metadata = hp.reflect_tables(itira_engine_conn)
+#        td_usa = metadata.tables['td_usa']
+#        # Get Table
+#        print(td_usa)
+#        itira_engine_conn.execute(td_usa.insert(),dump_pd)
+#        print('Records entered successfully into the ',td_usa)
+
+if table_is_empty():
+    print('Ready to insert records')
+    with itira_engine_conn.begin():
         metadata = hp.reflect_tables(itira_engine_conn)
         td_usa = metadata.tables['td_usa']
         # Get Table
         print(td_usa)
         itira_engine_conn.execute(td_usa.insert(),dump_pd)
         print('Records entered successfully into the ',td_usa)
+else:
+    print('Ready to update the records')
+    with itira_engine_conn.begin():
+        metadata = hp.reflect_tables(itira_engine_conn)
+        td_usa = metadata.tables['td_usa']
+        q = td_usa.update().\
+        where(
+              and_(
+                      td_usa.c.country_id == bindparam('country_id'),
+                      td_usa.c.update_date != bindparam('update_date'),
+              )
+        ).\
+        values({
+            'country_id': bindparam('country_id'),
+            'update_date': bindparam('update_date'),
+            'alert_status': bindparam('alert_status'),
+            'summary': bindparam('summary'),
+            'alert_details': bindparam('alert_details'),
+            'embassy_consulate': bindparam('embassy_consulate'),
+            'destination_description': bindparam('destination_description'),
+            'entry_exit': bindparam('entry_exit'),
+            'safty_security': bindparam('safty_security'),
+            'local_law': bindparam('local_law'),
+            'health': bindparam('health'),
+            'travel_transport': bindparam('travel_transport'),
+            'url': bindparam('url'),
+        })
+
+        itira_engine_conn.execute(q, dump_pd)
+        print('Records updated successfully into the ',td_usa)
 
