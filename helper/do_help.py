@@ -50,6 +50,8 @@ def check_connnection(f):
                 # Connections that live longer than the specified amount of time will be
                 # reestablished
                 pool_recycle=1800,  # 30 minutes
+                pool_pre_ping=True,
+                pool_use_lifo=True,
                 )
          try:
             db.connect()
