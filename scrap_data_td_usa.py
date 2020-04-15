@@ -6,11 +6,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 import pandas as pd
-from helper import do_help as hp
 from sqlalchemy.sql import text
+from sqlalchemy import MetaData, and_, inspect, or_, select
+from sqlalchemy.sql.expression import bindparam
 import os
 from bs4 import BeautifulSoup
-from sqlalchemy import select
 import json
 
 # dir path here
