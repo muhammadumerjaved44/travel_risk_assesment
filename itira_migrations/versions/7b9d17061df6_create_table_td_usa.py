@@ -46,6 +46,7 @@ def upgrade_itira_db():
         sa.Column('entry_exit', sa.Text, nullable=False),
         sa.Column('safty_security', sa.Text, nullable=False),
         sa.Column('local_law', sa.Text, nullable=False),
+        sa.Column('health', sa.Text, nullable=False),
         sa.Column('travel_transport', sa.Text, nullable=False),
         sa.Column('url', sa.Text, nullable=False),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP()")),
