@@ -15,6 +15,7 @@ import config as cnf
 import country_converter as coco
 from sqlalchemy import MetaData
 import logging
+import re
 
 
 
@@ -22,6 +23,14 @@ import logging
 dir_path = os.path.abspath(os.path.dirname(__file__))
 parent_path = os.path.abspath(os.path.join(dir_path, os.pardir))
 print('this is path', parent_path)
+
+add_data = pd.DataFrame.from_dict({
+       'name_short' : ['Yugoslavia', 'United States'],
+       'name_official' : ['Federal Republic of Yugoslavia', "United States of America"],
+       'regex' : [r'Yugo.*via|yugoslavia|Federal.*via', '(a|A)m(e|é).*ica|^(?!.*islands).*united.?states|^u\.?s\.?a\.?$|^u\.?s\.?$ '], 
+       'ISO3': ['YUG', 'USA']}
+)
+
 
 
 def save_excel(df, path, columns= None, index=False):
@@ -159,3 +168,7 @@ def reflect_tables(conn):
      metadata = MetaData()
      metadata.reflect(bind=conn)
      return metadata
+
+def camel_case_split(x): 
+    print(x)
+    return ' '.join(re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', x))
