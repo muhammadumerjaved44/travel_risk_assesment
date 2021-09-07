@@ -27,7 +27,7 @@ print('this is path', parent_path)
 add_data = pd.DataFrame.from_dict({
        'name_short' : ['Yugoslavia', 'United States'],
        'name_official' : ['Federal Republic of Yugoslavia', "United States of America"],
-       'regex' : [r'Yugo.*via|yugoslavia|Federal.*via', '(a|A)m(e|é).*ica|^(?!.*islands).*united.?states|^u\.?s\.?a\.?$|^u\.?s\.?$ '], 
+       'regex' : [r'Yugo.*via|yugoslavia|Federal.*via', '(a|A)m(e|é).*ica|^(?!.*islands).*united.?states|^u\.?s\.?a\.?$|^u\.?s\.?$ '],
        'ISO3': ['YUG', 'USA']}
 )
 
@@ -106,7 +106,6 @@ def get_any_browser(selenium_url):
                   desired_capabilities=DesiredCapabilities.CHROME)
         logging.info('run from the docker browser')
     return browser
-    
 
 
 def save_as_pickel(file_name, data):
@@ -144,7 +143,7 @@ def prepare_urls_travel_advisory_usa():
             for u in v.select('td'):
                 data.append(u.text.strip())
             data.extend([v.find('a').attrs['href']])
-                
+
             data_list.append(data)
     return data_list
 
@@ -169,6 +168,6 @@ def reflect_tables(conn):
      metadata.reflect(bind=conn)
      return metadata
 
-def camel_case_split(x): 
+def camel_case_split(x):
     print(x)
     return ' '.join(re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', x))
